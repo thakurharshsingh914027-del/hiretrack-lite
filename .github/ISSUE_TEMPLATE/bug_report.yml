@@ -1,0 +1,98 @@
+name: Bug report
+description: Report a reproducible problem in HireTrack Lite.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve HireTrack Lite. Search existing issues first. Do not include passwords, tokens, cookies, resumes, candidate details, or private vulnerability information.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the problem in one specific sentence.
+      placeholder: A recruiter cannot restore an archived candidate after clearing the search filter.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Authentication and onboarding
+        - Dashboard and analytics
+        - Jobs
+        - Candidates and resumes
+        - Applications and pipeline
+        - Interviews and notes
+        - Members and settings
+        - Accessibility and responsive UI
+        - Build, tests, or deployment
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest reliable sequence, including role and relevant record state.
+      placeholder: |
+        1. Sign in as a recruiter.
+        2. Open Candidates and apply the Archived filter.
+        3. Open a candidate and choose Restore.
+        4. Observe the result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should the user see or be able to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact user-facing message and whether a retry changes the result.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Provide the release tag or commit SHA when known.
+      placeholder: v1.0.0 or 0123abc
+
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      description: Include browser version, operating system, device/viewport, and light or dark theme when relevant.
+      placeholder: Chrome 126, Windows 11, 390 x 844 viewport, dark theme
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Add sanitized logs, screenshots, or a short recording. Remove personal data and secrets.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed secrets, candidate data, resumes, and other personal information.
+          required: true
+        - label: This is not a private security vulnerability report.
+          required: true

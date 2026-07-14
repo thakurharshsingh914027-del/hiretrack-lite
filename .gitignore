@@ -1,0 +1,56 @@
+# Dependencies
+/node_modules/
+
+# Next.js and production output
+/.next/
+/out/
+/dist/
+/build/
+
+# Test and coverage output
+/coverage/
+/playwright-report/
+/test-results/
+/blob-report/
+/.lighthouseci/
+
+# Local environment files: keep only the documented contract
+.env
+.env.*
+!.env.example
+
+# Local database and generated ORM artifacts
+*.db
+*.db-journal
+/.prisma/
+
+# Logs and debug output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript and framework-generated files
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel and local deployment state
+/.vercel/
+
+# Certificates and private keys
+*.pem
+*.key
+
+# Editor and operating-system files
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~

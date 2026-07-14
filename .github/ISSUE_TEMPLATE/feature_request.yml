@@ -1,0 +1,84 @@
+name: Feature request
+description: Propose a focused improvement grounded in a user problem.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        HireTrack Lite favors finished core workflows over broad feature count. Explain the user problem first so the proposal can be evaluated against the v1 scope and architecture decisions.
+
+  - type: input
+    id: problem
+    attributes:
+      label: User problem
+      description: State who is blocked and what they cannot accomplish today.
+      placeholder: Hiring leads cannot quickly distinguish interviews awaiting feedback from future scheduled interviews.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user
+    attributes:
+      label: Primary user
+      options:
+        - Organization admin
+        - Recruiter or hiring lead
+        - Read-only viewer
+        - Candidate
+        - Contributor or operator
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable behavior without prescribing the implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Share a concise interaction or technical approach if you have one.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain workarounds or smaller options and why they are insufficient.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance examples
+      description: Give two or three examples that would prove the outcome, including an important edge case.
+      placeholder: |
+        - A recruiter can filter past interviews that have no feedback.
+        - A viewer can inspect the same state but cannot submit feedback.
+        - An empty result explains how to clear the filter.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact areas
+      options:
+        - label: This may change the database schema or migration plan.
+        - label: This may change authorization or organization isolation.
+        - label: This may add an environment variable or external provider.
+        - label: This changes visible UI and needs accessibility/responsive review.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues and the roadmap for this request.
+          required: true
+        - label: I described a user outcome rather than only a preferred implementation.
+          required: true
