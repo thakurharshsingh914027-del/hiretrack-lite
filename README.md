@@ -8,7 +8,9 @@
 
 ![HireTrack Lite landing page](docs/screenshots/hero.png)
 
-**Live demo:** `https://hiretrack-lite.example.com` — deployment placeholder; no public deployment is being claimed yet.
+**Live preview:** [https://hiretrack-lite.vercel.app](https://hiretrack-lite.vercel.app)
+
+**Repository:** [https://github.com/thakurharshsingh914027-del/hiretrack-lite](https://github.com/thakurharshsingh914027-del/hiretrack-lite)
 
 **Demo access:** A verified, seeded demo login will be published here after the authentication milestone. No demo credentials are available yet.
 
