@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  RECRUITER
+  VIEWER
+}
+
+enum InvitationRole {
+  RECRUITER
+  VIEWER
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERNSHIP
+}
+
+enum ApplicationStage {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  VIDEO
+  ONSITE
+  TECHNICAL
+  OTHER
+}
+
+enum ActivityEntityType {
+  ORGANIZATION
+  USER
+  MEMBERSHIP
+  INVITATION
+  JOB
+  CANDIDATE
+  APPLICATION
+  INTERVIEW
+  CANDIDATE_NOTE
+}
+
+enum ActivityAction {
+  CREATED
+  UPDATED
+  ARCHIVED
+  RESTORED
+  STATUS_CHANGED
+  STAGE_CHANGED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  INVITED
+  INVITATION_REVOKED
+  ROLE_CHANGED
+  DEACTIVATED
+  REACTIVATED
+  NOTE_ADDED
+  NOTE_DELETED
+  RESUME_REPLACED
+  EXPORTED
+  BULK_UPDATED
+}
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(120)
+  slug      String   @unique(map: "organizations_slug_key") @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memberships    Membership[]
+  jobs           Job[]
+  candidates     Candidate[]
+  applications   Application[]
+  interviews     Interview[]
+  candidateNotes CandidateNote[]
+  activityLogs   ActivityLog[]
+  invitations    OrganizationInvitation[]
+
+  @@map("organizations")
+}
+
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String?   @db.VarChar(120)
+  email           String    @unique(map: "users_email_key") @db.VarChar(320)
+  emailNormalized String    @unique(map: "users_email_normalized_key") @map("email_normalized") @db.VarChar(320)
+  passwordHash    String?   @map("password_hash") @db.Text
+  emailVerified   DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  image           String?   @db.Text
+  sessionVersion  Int       @default(0) @map("session_version")
+  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  accounts                Account[]
+  memberships             Membership[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+
+  @@index([disabledAt], map: "users_disabled_at_idx")
+  @@map("users")
+}
+
+model Account {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  type              String   @db.VarChar(40)
+  provider          String   @db.VarChar(80)
+  providerAccountId String   @map("provider_account_id") @db.VarChar(255)
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?  @db.VarChar(80)
+  scope             String?  @db.Text
+  id_token          String?  @db.Text
+  session_state     String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId], map: "accounts_provider_provider_account_id_key")
+  @@index([userId], map: "accounts_user_id_idx")
+  @@map("auth_accounts")
+}
+
+model Membership {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  role           Role
+  version        Int       @default(1)
+  deactivatedAt  DateTime? @map("deactivated_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobsCreated         Job[]                    @relation("JobCreatedBy")
+  candidatesCreated   Candidate[]              @relation("CandidateCreatedBy")
+  applicationsCreated Application[]            @relation("ApplicationCreatedBy")
+  interviewsCreated   Interview[]              @relation("InterviewCreatedBy")
+  interviewsAssigned  Interview[]              @relation("InterviewInterviewer")
+  notesAuthored       CandidateNote[]          @relation("CandidateNoteAuthor")
+  notesDeleted        CandidateNote[]          @relation("CandidateNoteDeletedBy")
+  activityLogs        ActivityLog[]            @relation("ActivityActor")
+  invitationsSent     OrganizationInvitation[] @relation("InvitationInviter")
+
+  @@unique([organizationId, userId], map: "memberships_organization_id_user_id_key")
+  @@unique([organizationId, id], map: "memberships_organization_id_id_key")
+  @@index([userId, deactivatedAt], map: "memberships_user_id_deactivated_at_idx")
+  @@index([organizationId, role, deactivatedAt], map: "memberships_org_role_deactivated_at_idx")
+  @@map("memberships")
+}
+
+model Job {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String         @map("organization_id") @db.Uuid
+  title                 String         @db.VarChar(180)
+  department            String         @db.VarChar(120)
+  location              String         @db.VarChar(180)
+  employmentType        EmploymentType @map("employment_type")
+  description           String         @db.Text
+  requirements          String         @db.Text
+  status                JobStatus      @default(DRAFT)
+  version               Int            @default(1)
+  createdByMembershipId String         @map("created_by_membership_id") @db.Uuid
+  deletedAt             DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    Membership    @relation("JobCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: NoAction)
+  applications Application[]
+
+  @@unique([organizationId, id], map: "jobs_organization_id_id_key")
+  @@index([organizationId, deletedAt, status, createdAt, id], map: "jobs_org_deleted_status_created_id_idx")
+  @@index([organizationId, department, deletedAt, createdAt, id], map: "jobs_org_department_deleted_created_id_idx")
+  @@index([organizationId, title, id], map: "jobs_org_title_id_idx")
+  @@index([organizationId, createdByMembershipId], map: "jobs_org_creator_idx")
+  @@map("jobs")
+}
+
+model Candidate {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String    @map("organization_id") @db.Uuid
+  firstName             String    @map("first_name") @db.VarChar(120)
+  lastName              String    @map("last_name") @db.VarChar(120)
+  email                 String    @db.VarChar(320)
+  emailNormalized       String    @map("email_normalized") @db.VarChar(320)
+  phone                 String?   @db.VarChar(40)
+  location              String?   @db.VarChar(180)
+  skills                String[]  @default([])
+  experienceYears       Decimal   @default(0) @map("experience_years") @db.Decimal(4, 1)
+  resumeStorageKey      String?   @unique(map: "candidates_resume_storage_key_key") @map("resume_storage_key") @db.Text
+  resumeFileName        String?   @map("resume_file_name") @db.VarChar(255)
+  resumeMimeType        String?   @map("resume_mime_type") @db.VarChar(120)
+  resumeSizeBytes       Int?      @map("resume_size_bytes")
+  version               Int       @default(1)
+  createdByMembershipId String    @map("created_by_membership_id") @db.Uuid
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    Membership      @relation("CandidateCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: NoAction)
+  applications Application[]
+  notes        CandidateNote[]
+
+  @@unique([organizationId, id], map: "candidates_organization_id_id_key")
+  @@index([organizationId, deletedAt, createdAt, id], map: "candidates_org_deleted_created_id_idx")
+  @@index([organizationId, lastName, firstName, id], map: "candidates_org_name_id_idx")
+  @@index([organizationId, location, deletedAt, id], map: "candidates_org_location_deleted_id_idx")
+  @@index([organizationId, createdByMembershipId], map: "candidates_org_creator_idx")
+  @@map("candidates")
+}
+
+model Application {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String           @map("organization_id") @db.Uuid
+  jobId                 String           @map("job_id") @db.Uuid
+  candidateId           String           @map("candidate_id") @db.Uuid
+  stage                 ApplicationStage @default(APPLIED)
+  source                String?          @db.VarChar(120)
+  hiredAt               DateTime?        @map("hired_at") @db.Timestamptz(3)
+  rejectedAt            DateTime?        @map("rejected_at") @db.Timestamptz(3)
+  version               Int              @default(1)
+  createdByMembershipId String           @map("created_by_membership_id") @db.Uuid
+  deletedAt             DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job          Job          @relation(fields: [organizationId, jobId], references: [organizationId, id], onDelete: NoAction)
+  candidate    Candidate    @relation(fields: [organizationId, candidateId], references: [organizationId, id], onDelete: NoAction)
+  createdBy    Membership   @relation("ApplicationCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: NoAction)
+  interviews   Interview[]
+
+  @@unique([organizationId, id], map: "applications_organization_id_id_key")
+  @@index([organizationId, jobId, stage, updatedAt, id], map: "applications_org_job_stage_updated_id_idx")
+  @@index([organizationId, candidateId, createdAt, id], map: "applications_org_candidate_created_id_idx")
+  @@index([organizationId, stage, updatedAt, id], map: "applications_org_stage_updated_id_idx")
+  @@index([organizationId, hiredAt, id], map: "applications_org_hired_at_id_idx")
+  @@index([organizationId, createdByMembershipId], map: "applications_org_creator_idx")
+  @@map("applications")
+}
+
+model Interview {
+  id                      String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId          String          @map("organization_id") @db.Uuid
+  applicationId           String          @map("application_id") @db.Uuid
+  interviewerMembershipId String          @map("interviewer_membership_id") @db.Uuid
+  type                    InterviewType
+  startsAt                DateTime        @map("starts_at") @db.Timestamptz(3)
+  endsAt                  DateTime        @map("ends_at") @db.Timestamptz(3)
+  timeZone                String          @map("time_zone") @db.VarChar(100)
+  meetingUrl              String?         @map("meeting_url") @db.Text
+  status                  InterviewStatus @default(SCHEDULED)
+  feedback                String?         @db.Text
+  rating                  Int?
+  version                 Int             @default(1)
+  createdByMembershipId   String          @map("created_by_membership_id") @db.Uuid
+  createdAt               DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  application  Application  @relation(fields: [organizationId, applicationId], references: [organizationId, id], onDelete: NoAction)
+  interviewer  Membership   @relation("InterviewInterviewer", fields: [organizationId, interviewerMembershipId], references: [organizationId, id], onDelete: NoAction)
+  createdBy    Membership   @relation("InterviewCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: NoAction)
+
+  @@index([organizationId, status, startsAt, id], map: "interviews_org_status_starts_id_idx")
+  @@index([organizationId, applicationId, startsAt, id], map: "interviews_org_application_starts_idx")
+  @@index([organizationId, interviewerMembershipId, startsAt, id], map: "interviews_org_interviewer_starts_id_idx")
+  @@index([organizationId, createdByMembershipId], map: "interviews_org_creator_idx")
+  @@map("interviews")
+}
+
+model CandidateNote {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String    @map("organization_id") @db.Uuid
+  candidateId           String    @map("candidate_id") @db.Uuid
+  authorMembershipId    String    @map("author_membership_id") @db.Uuid
+  body                  String    @db.Text
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedByMembershipId String?   @map("deleted_by_membership_id") @db.Uuid
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate    Candidate    @relation(fields: [organizationId, candidateId], references: [organizationId, id], onDelete: NoAction)
+  author       Membership   @relation("CandidateNoteAuthor", fields: [organizationId, authorMembershipId], references: [organizationId, id], onDelete: NoAction)
+  deletedBy    Membership?  @relation("CandidateNoteDeletedBy", fields: [organizationId, deletedByMembershipId], references: [organizationId, id], onDelete: NoAction)
+
+  @@index([organizationId, candidateId, deletedAt, createdAt, id], map: "candidate_notes_org_candidate_deleted_created_id_idx")
+  @@index([organizationId, authorMembershipId], map: "candidate_notes_org_author_idx")
+  @@index([organizationId, deletedByMembershipId], map: "candidate_notes_org_deleter_idx")
+  @@map("candidate_notes")
+}
+
+model ActivityLog {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String             @map("organization_id") @db.Uuid
+  actorMembershipId String?            @map("actor_membership_id") @db.Uuid
+  entityType        ActivityEntityType @map("entity_type")
+  entityId          String             @map("entity_id") @db.Uuid
+  action            ActivityAction
+  batchId           String?            @map("batch_id") @db.Uuid
+  changes           Json?              @db.JsonB
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// The migration narrows SET NULL to actorMembershipId so organizationId stays intact.
+  actor        Membership?  @relation("ActivityActor", fields: [organizationId, actorMembershipId], references: [organizationId, id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt, id], map: "activity_logs_org_created_id_idx")
+  @@index([organizationId, entityType, entityId, createdAt], map: "activity_logs_org_entity_created_idx")
+  @@index([organizationId, actorMembershipId, createdAt], map: "activity_logs_org_actor_created_idx")
+  @@index([organizationId, batchId], map: "activity_logs_org_batch_id_idx")
+  @@map("activity_logs")
+}
+
+model EmailVerificationToken {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tokenHash     String    @unique(map: "email_verification_tokens_token_hash_key") @map("token_hash") @db.Char(64)
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt        DateTime? @map("used_at") @db.Timestamptz(3)
+  invalidatedAt DateTime? @map("invalidated_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt], map: "email_verification_tokens_user_expires_idx")
+  @@index([expiresAt], map: "email_verification_tokens_expires_idx")
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tokenHash     String    @unique(map: "password_reset_tokens_token_hash_key") @map("token_hash") @db.Char(64)
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt        DateTime? @map("used_at") @db.Timestamptz(3)
+  invalidatedAt DateTime? @map("invalidated_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt], map: "password_reset_tokens_user_expires_idx")
+  @@index([expiresAt], map: "password_reset_tokens_expires_idx")
+  @@map("password_reset_tokens")
+}
+
+model OrganizationInvitation {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String         @map("organization_id") @db.Uuid
+  email                 String         @db.VarChar(320)
+  emailNormalized       String         @map("email_normalized") @db.VarChar(320)
+  role                  InvitationRole
+  tokenHash             String         @unique(map: "organization_invitations_token_hash_key") @map("token_hash") @db.Char(64)
+  invitedByMembershipId String         @map("invited_by_membership_id") @db.Uuid
+  expiresAt             DateTime       @map("expires_at") @db.Timestamptz(3)
+  acceptedAt            DateTime?      @map("accepted_at") @db.Timestamptz(3)
+  revokedAt             DateTime?      @map("revoked_at") @db.Timestamptz(3)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    Membership   @relation("InvitationInviter", fields: [organizationId, invitedByMembershipId], references: [organizationId, id], onDelete: NoAction)
+
+  @@index([organizationId, acceptedAt, revokedAt, expiresAt], map: "organization_invitations_org_state_expires_idx")
+  @@index([organizationId, invitedByMembershipId], map: "organization_invitations_org_inviter_idx")
+  @@map("organization_invitations")
+}

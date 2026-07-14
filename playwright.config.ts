@@ -23,6 +23,15 @@ export default defineConfig({
           url: "http://127.0.0.1:3100",
           reuseExistingServer: !process.env.CI,
           timeout: 120_000,
+          env: {
+            ...process.env,
+            AUTH_SECRET:
+              process.env.AUTH_SECRET ??
+              "playwright-local-secret-with-at-least-32-bytes",
+            AUTH_URL: process.env.AUTH_URL ?? "http://127.0.0.1:3100",
+            NEXT_PUBLIC_APP_URL:
+              process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3100",
+          },
         },
       }),
 });

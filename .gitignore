@@ -23,6 +23,7 @@
 *.db
 *.db-journal
 /.prisma/
+/src/generated/prisma/
 
 # Logs and debug output
 *.log

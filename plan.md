@@ -1,8 +1,8 @@
 # HireTrack Lite — Product and Implementation Plan
 
-Status: **Milestone 1 verified on 2026-07-13; awaiting approval for Milestone 2**
+Status: **Milestones 1, 2, and 3 implemented and verified; awaiting explicit approval for Milestone 4**
 
-Approval phrase: `APPROVE PLAN`
+Next approval phrase: `APPROVE MILESTONE 4`
 
 Planning date: 2026-07-13
 
@@ -747,7 +747,7 @@ Exact route-local files will be introduced only when their milestone requires th
 - Analytics queries against known fixtures.
 - CSV/PDF export authorization, filter/order/visible-column parity, row cap, PDF page/layout behavior, and CSV formula-injection protection.
 
-Database integration tests run against real PostgreSQL rather than mocking Prisma. Each test uses transaction rollback or isolated schemas/workers to prevent leakage.
+Database integration tests run against real PostgreSQL rather than mocking Prisma. Each test uses transaction rollback, isolated schemas/workers, or a guarded disposable test database with deterministic ordered cleanup to prevent leakage.
 
 ### Component/accessibility tests
 
@@ -855,12 +855,14 @@ For every implementation milestone, the execution loop is: explain scope → lis
 - Add CI foundation and smoke/unit tests for environment and base UI.
 - Keep all pages runnable using non-domain placeholder/empty states only.
 
-### Milestone 2 — Data model, migrations, and seed
+### Milestone 2 — Data model, migrations, and seed (complete)
 
 - Add Prisma/PostgreSQL schema (including Auth.js provider accounts), enums, constraints, relations, indexes, partial unique migration SQL, client singleton, test database setup, and factories.
 - Add deterministic idempotent seed organization, verified demo admin, recruiter/viewer fixtures, jobs/candidates/applications/interviews/activity suitable for a demo.
 - Test schema constraints, tenant uniqueness, and seed idempotency.
 - Document data decisions in `docs/decisions.md` and setup commands.
+
+Verification on 2026-07-14: the reviewed migration applied from empty state on PostgreSQL, migration status and database-to-schema diff were clean, all 30 Vitest tests and 9 Chromium Playwright checks passed, lint/format/typecheck/build passed, and the dependency audit reported zero known vulnerabilities.
 
 ### Milestone 3 — Authentication and security baseline
 
@@ -868,6 +870,8 @@ For every implementation milestone, the execution loop is: explain scope → lis
 - Add centralized session/membership resolver, authorization policy, origin checks, security headers/CSP, safe error/logging helpers.
 - Add authentication and invitation validation/integration tests and full RBAC matrix tests.
 - Document demo credentials and all auth/security environment variables.
+
+Verification on 2026-07-14: format, lint, strict typecheck, 67 Vitest tests (8 intentional skips), and production build passed. Auth UI routes build as static-safe public pages; protected workspace routes are server-rendered with live session/membership checks. No recruiting vertical or Milestone 4 work was started.
 
 ### Milestone 4 — Jobs vertical slice
 

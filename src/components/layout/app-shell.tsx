@@ -32,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/auth/user-menu";
 
 const navigation = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboardIcon },
@@ -77,9 +78,17 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-type AppShellProps = { children: React.ReactNode };
+type AppShellProps = {
+  children: React.ReactNode;
+  userName?: string;
+  organizationName?: string;
+};
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({
+  children,
+  userName,
+  organizationName,
+}: AppShellProps) {
   const [commandOpen, setCommandOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
@@ -177,6 +186,9 @@ export function AppShell({ children }: AppShellProps) {
           <div className="ml-auto hidden lg:block">
             <ThemeToggle />
           </div>
+          {userName && organizationName && (
+            <UserMenu name={userName} organization={organizationName} />
+          )}
         </header>
         <div className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           {children}

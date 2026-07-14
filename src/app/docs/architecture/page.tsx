@@ -16,9 +16,10 @@ export default function ArchitecturePage() {
       path="/docs/architecture"
     >
       <p>
-        Milestone 1 establishes the runnable interface and public documentation.
-        Later milestones will implement and test the following protected request
-        flow and system boundaries.
+        Milestone 1 establishes the runnable interface and public documentation;
+        Milestone 2 adds the reviewed Prisma/PostgreSQL schema, migration, seed,
+        and real-database tests. Later milestones will connect the following
+        protected request flow to that foundation.
       </p>
       <h2>Target request flow</h2>
       <ol>

@@ -36,8 +36,9 @@ export default function DeploymentPage() {
           in GitHub Actions.
         </li>
         <li>
-          Configure every variable documented in <code>.env.example</code> using
-          Vercel environment settings.
+          Configure only the variables required by the features being deployed,
+          using Vercel environment settings. Never deploy documented placeholder
+          values.
         </li>
         <li>
           Apply reviewed migrations with <code>prisma migrate deploy</code>{" "}
@@ -52,12 +53,13 @@ export default function DeploymentPage() {
           incognito browser.
         </li>
       </ol>
-      <h2>No fabricated deployment evidence</h2>
+      <h2>Release evidence</h2>
       <p>
-        The repository keeps live URL fields marked as pending until a real
-        public deployment exists. Provider access and public repository changes
-        require owner authorization; release documentation will report that
-        blocker instead of inventing a URL or passing result.
+        A public pre-release preview and repository are available. Final release
+        documentation will still report demo access, complete workflow checks,
+        screenshots, measured quality results, and a semantic tag only after
+        each artifact has been verified; missing provider access is reported as
+        a blocker instead of an invented result.
       </p>
     </DocsPage>
   );

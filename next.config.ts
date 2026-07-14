@@ -14,6 +14,8 @@ const contentSecurityPolicy = [
   "img-src 'self' blob: data:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
+  // Next's bootstrap and next-themes scripts require inline execution. Keep
+  // the source list narrow and pair it with frame/origin restrictions below.
   `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
   connectSource,
   "worker-src 'self' blob:",

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePublicEnv, parseServerEnv } from "@/lib/env";
+import {
+  parseDatabaseRuntimeEnv,
+  parsePublicEnv,
+  parseSeedEnv,
+  parseServerEnv,
+} from "@/lib/env";
 
 const validServerEnv = {
   DATABASE_URL: "postgresql://user:password@localhost:5432/hiretrack",
@@ -44,9 +49,47 @@ describe("environment validation", () => {
   });
 
   it("accepts a complete server environment without OAuth", () => {
-    expect(parseServerEnv(validServerEnv).DEMO_ADMIN_EMAIL).toBe(
-      "demo@example.com",
+    expect(parseServerEnv(validServerEnv).DATABASE_URL).toBe(
+      validServerEnv.DATABASE_URL,
     );
+  });
+
+  it("parses the database runtime contract without future service secrets", () => {
+    expect(
+      parseDatabaseRuntimeEnv({
+        DATABASE_URL: "postgresql://user:password@localhost:5432/hiretrack",
+      }),
+    ).toEqual({
+      DATABASE_URL: "postgresql://user:password@localhost:5432/hiretrack",
+    });
+  });
+
+  it("rejects non-PostgreSQL runtime database URLs", () => {
+    expect(() =>
+      parseDatabaseRuntimeEnv({ DATABASE_URL: "https://example.com/database" }),
+    ).toThrow(/PostgreSQL connection URL/);
+  });
+
+  it("accepts an explicit safe demo seed contract", () => {
+    expect(
+      parseSeedEnv({
+        DEMO_ORGANIZATION_NAME: "HireTrack Test",
+        DEMO_ADMIN_NAME: "Demo Admin",
+        DEMO_ADMIN_EMAIL: "demo@example.com",
+        DEMO_ADMIN_PASSWORD: "correct-horse-battery-staple",
+      }).DEMO_ADMIN_EMAIL,
+    ).toBe("demo@example.com");
+  });
+
+  it("rejects the documented demo password placeholder before seeding", () => {
+    expect(() =>
+      parseSeedEnv({
+        DEMO_ORGANIZATION_NAME: "HireTrack Test",
+        DEMO_ADMIN_NAME: "Demo Admin",
+        DEMO_ADMIN_EMAIL: "demo@example.com",
+        DEMO_ADMIN_PASSWORD: "replace-with-a-local-demo-password",
+      }),
+    ).toThrow(/must not use the documented placeholder/);
   });
 
   it("accepts a complete optional OAuth provider pair", () => {
@@ -67,7 +110,12 @@ describe("environment validation", () => {
 
   it("rejects demo passwords shorter than the product minimum", () => {
     expect(() =>
-      parseServerEnv({ ...validServerEnv, DEMO_ADMIN_PASSWORD: "too-short" }),
+      parseSeedEnv({
+        DEMO_ORGANIZATION_NAME: "HireTrack Test",
+        DEMO_ADMIN_NAME: "Demo Admin",
+        DEMO_ADMIN_EMAIL: "demo@example.com",
+        DEMO_ADMIN_PASSWORD: "too-short",
+      }),
     ).toThrow();
   });
 

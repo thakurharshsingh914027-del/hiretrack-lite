@@ -2,7 +2,7 @@
 
 > A focused applicant tracking workspace that helps small hiring teams move candidates from application to hire without juggling spreadsheets, inboxes, and disconnected calendars.
 
-[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![CI](https://github.com/thakurharshsingh914027-del/hiretrack-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/thakurharshsingh914027-del/hiretrack-lite/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0F766E.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 
@@ -12,13 +12,13 @@
 
 **Repository:** [https://github.com/thakurharshsingh914027-del/hiretrack-lite](https://github.com/thakurharshsingh914027-del/hiretrack-lite)
 
-**Demo access:** A verified, seeded demo login will be published here after the authentication milestone. No demo credentials are available yet.
+**Demo access:** The database seed creates a verified demo admin. Credentials remain operator-supplied through server-only environment variables; they are never published in this repository.
 
 HireTrack Lite is designed for small companies that need the essential behavior of an applicant tracking system without enterprise complexity. One organization-scoped workspace brings together jobs, candidates, applications, interviews, notes, activity history, and hiring analytics. The product is currently under milestone-based development; this README distinguishes planned release scope from functionality already implemented.
 
 ## Current status
 
-Milestone 1 is complete: the runnable Next.js foundation, visual system, responsive workspace shell, keyboard command palette, static product docs/FAQ, SEO surfaces, quality tooling, environment contract, CI, and repository documentation are verified. Recruiting data, seeded accounts, and production deployment arrive in later milestones and are not represented by mock success claims here.
+Milestones 1–3 are complete. The repository now includes the runnable Next.js foundation, reviewed PostgreSQL/Prisma data model, Auth.js credentials/OAuth boundary, verified email and recovery flows, organization invitations, protected layouts, live membership/RBAC checks, session-version revocation, mail/rate-limit adapters, real-PostgreSQL integration tests, and PostgreSQL-backed CI. Recruiting mutations remain gated later milestones; the current public deployment is still a pre-release product preview.
 
 ## Release scope
 
@@ -63,41 +63,47 @@ Real screenshots will be captured from the completed application and added to [`
 
 - Node.js 24 LTS
 - npm
-- PostgreSQL for database milestones (Milestone 1 itself does not require a database service)
+- PostgreSQL 17-compatible database for migrations, seeds, and integration tests
 
 ```bash
-git clone https://github.com/your-username/hiretrack-lite.git
+git clone https://github.com/thakurharshsingh914027-del/hiretrack-lite.git
 cd hiretrack-lite
 cp .env.example .env.local
 npm ci
+```
+
+Set `DATABASE_URL`, `DIRECT_URL`, and a non-placeholder `DEMO_ADMIN_PASSWORD` in `.env.local`, then initialize the database:
+
+```bash
+npm run db:validate
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The values in `.env.example` are safe placeholders; replace only the services required by the milestone you are running.
-
-Once the schema and seed are delivered, a clean data setup will use:
-
-```bash
-npm run db:migrate
-npm run db:seed
-```
-
-Those database commands are part of the upcoming schema milestone and should not be treated as available until their package scripts and migrations are committed.
+Open [http://localhost:3000](http://localhost:3000). `DATABASE_URL` is the pooled application connection; `DIRECT_URL` is the direct connection used by Prisma migrations. Use `npm run db:migrate:deploy` instead of the development migration command in CI or production.
 
 ## Commands
 
-| Command                | Purpose                                              |
-| ---------------------- | ---------------------------------------------------- |
-| `npm run dev`          | Start the local development server                   |
-| `npm run build`        | Create a production build                            |
-| `npm run start`        | Serve the production build                           |
-| `npm run lint`         | Run repository lint rules                            |
-| `npm run typecheck`    | Check strict TypeScript types without emitting files |
-| `npm run test`         | Run the automated test suite once                    |
-| `npm run test:watch`   | Run unit tests in watch mode                         |
-| `npm run test:e2e`     | Run Playwright browser tests against a built app     |
-| `npm run format`       | Format supported source and documentation files      |
-| `npm run format:check` | Verify formatting without changing files             |
+| Command                     | Purpose                                                |
+| --------------------------- | ------------------------------------------------------ |
+| `npm run dev`               | Start the local development server                     |
+| `npm run build`             | Create a production build                              |
+| `npm run start`             | Serve the production build                             |
+| `npm run db:generate`       | Generate the pinned Prisma Client                      |
+| `npm run db:validate`       | Validate the Prisma schema and configuration           |
+| `npm run db:migrate`        | Create/apply development migrations                    |
+| `npm run db:migrate:deploy` | Apply committed migrations without development prompts |
+| `npm run db:seed`           | Reconcile the deterministic demo dataset               |
+| `npm run db:studio`         | Inspect the configured development database            |
+| `npm run lint`              | Run repository lint rules                              |
+| `npm run typecheck`         | Check strict TypeScript types without emitting files   |
+| `npm run test`              | Run the automated test suite once                      |
+| `npm run test:db`           | Require and run the real-PostgreSQL constraint suite   |
+| `npm run test:watch`        | Run unit tests in watch mode                           |
+| `npm run test:e2e`          | Run Playwright browser tests against a built app       |
+| `npm run format`            | Format supported source and documentation files        |
+| `npm run format:check`      | Verify formatting without changing files               |
 
 Run the same quality gate used by CI before opening a pull request:
 
@@ -110,31 +116,35 @@ npm run build
 npm run test:e2e -- --project=chromium
 ```
 
+Database integration tests require an isolated `TEST_DATABASE_URL`. They are skipped by the general test command when no test database is configured, while `npm run test:db` fails fast without one. The suite deletes all HireTrack tables before each test, so the database/schema name must contain `test`; any other disposable target requires the one-run acknowledgement `ALLOW_DATABASE_RESET=true`. A target matching `DATABASE_URL` or `DIRECT_URL` is rejected without that acknowledgement. Remote targets additionally require `ALLOW_REMOTE_DATABASE_TESTS=true`.
+
+Apply committed migrations to the isolated target before the first run by temporarily pointing `DATABASE_URL` and `DIRECT_URL` at `TEST_DATABASE_URL`, then run `npm run db:migrate:deploy` and `npm run test:db`. Never persist `ALLOW_DATABASE_RESET=true` for a development or production database.
+
 ## Environment variables
 
 Copy `.env.example` to `.env.local`; never commit populated environment files. Variables for future services are documented now so deployment and clean-clone setup have one contract, but they are introduced into runtime validation only when their feature milestone needs them.
 
-| Variable                     | Visibility   | Purpose                                                                |
-| ---------------------------- | ------------ | ---------------------------------------------------------------------- |
-| `DATABASE_URL`               | Server only  | Pooled PostgreSQL connection used by the application                   |
-| `DIRECT_URL`                 | Server only  | Direct PostgreSQL connection used for migrations                       |
-| `AUTH_SECRET`                | Server only  | High-entropy Auth.js signing/encryption secret                         |
-| `AUTH_URL`                   | Server only  | Canonical Auth.js callback base URL                                    |
-| `AUTH_GOOGLE_ID`             | Server only  | Optional Google OAuth client ID; configured only as a complete pair    |
-| `AUTH_GOOGLE_SECRET`         | Server only  | Optional Google OAuth client secret                                    |
-| `AUTH_GITHUB_ID`             | Server only  | Optional GitHub OAuth client ID; configured only as a complete pair    |
-| `AUTH_GITHUB_SECRET`         | Server only  | Optional GitHub OAuth client secret                                    |
-| `NEXT_PUBLIC_APP_URL`        | Browser safe | Absolute canonical application URL for metadata and links              |
-| `NEXT_PUBLIC_REPOSITORY_URL` | Browser safe | Optional public repository URL for the application footer              |
-| `RESEND_API_KEY`             | Server only  | Resend credential for verification and password-reset mail             |
-| `EMAIL_FROM`                 | Server only  | Verified sender identity used by transactional email                   |
-| `BLOB_READ_WRITE_TOKEN`      | Server only  | Private Vercel Blob access token for resume storage                    |
-| `UPSTASH_REDIS_REST_URL`     | Server only  | Upstash Redis REST endpoint for distributed rate limits                |
-| `UPSTASH_REDIS_REST_TOKEN`   | Server only  | Upstash Redis REST credential                                          |
-| `DEMO_ORGANIZATION_NAME`     | Server only  | Organization name used by the idempotent demo seed                     |
-| `DEMO_ADMIN_NAME`            | Server only  | Display name used by the demo admin seed                               |
-| `DEMO_ADMIN_EMAIL`           | Server only  | Verified demo admin email used by the seed                             |
-| `DEMO_ADMIN_PASSWORD`        | Server only  | Demo password supplied at seed/deploy time, never hard-coded in source |
+| Variable                     | Visibility   | Purpose                                                                        |
+| ---------------------------- | ------------ | ------------------------------------------------------------------------------ |
+| `DATABASE_URL`               | Server only  | Pooled PostgreSQL connection used by the application                           |
+| `DIRECT_URL`                 | Server only  | Direct PostgreSQL connection used for migrations                               |
+| `AUTH_SECRET`                | Server only  | High-entropy Auth.js signing/encryption secret                                 |
+| `AUTH_URL`                   | Server only  | Canonical Auth.js callback base URL                                            |
+| `AUTH_GOOGLE_ID`             | Server only  | Optional Google OAuth client ID; configured only as a complete pair            |
+| `AUTH_GOOGLE_SECRET`         | Server only  | Optional Google OAuth client secret                                            |
+| `AUTH_GITHUB_ID`             | Server only  | Optional GitHub OAuth client ID; configured only as a complete pair            |
+| `AUTH_GITHUB_SECRET`         | Server only  | Optional GitHub OAuth client secret                                            |
+| `NEXT_PUBLIC_APP_URL`        | Browser safe | Absolute canonical application URL for metadata and links                      |
+| `NEXT_PUBLIC_REPOSITORY_URL` | Browser safe | Optional public repository URL for the application footer                      |
+| `RESEND_API_KEY`             | Server only  | Resend credential for verification and password-reset mail                     |
+| `EMAIL_FROM`                 | Server only  | Verified sender identity used by transactional email                           |
+| `BLOB_READ_WRITE_TOKEN`      | Server only  | Private Vercel Blob access token for resume storage                            |
+| `UPSTASH_REDIS_REST_URL`     | Server only  | Upstash Redis REST endpoint for distributed rate limits                        |
+| `UPSTASH_REDIS_REST_TOKEN`   | Server only  | Upstash Redis REST credential                                                  |
+| `DEMO_ORGANIZATION_NAME`     | Server only  | Organization name used by the idempotent demo seed                             |
+| `DEMO_ADMIN_NAME`            | Server only  | Display name used by the demo admin seed                                       |
+| `DEMO_ADMIN_EMAIL`           | Server only  | Verified demo admin email used by the seed                                     |
+| `DEMO_ADMIN_PASSWORD`        | Server only  | Operator-supplied demo password; only disposable CI/test values live in source |
 
 See [.env.example](.env.example) for safe development-shaped values and inline setup notes.
 
@@ -142,7 +152,7 @@ See [.env.example](.env.example) for safe development-shaped values and inline s
 
 The approved release architecture will use React Server Components for authorized reads close to the data source. Typed Server Actions will handle ordinary domain mutations, while Route Handlers will own Auth.js callbacks, private file streams, and streamed CSV/PDF responses. PostgreSQL will be the source of truth; resume bytes will remain in private object storage.
 
-Every protected operation will resolve the current session and active membership on the server, obtain the organization and role from the database, validate untrusted input, and include the trusted `organizationId` in its query. The UI may hide unavailable actions, but it will never be the authorization boundary. Domain changes and redacted activity events will be written together when consistency requires it. These protected data paths begin in later milestones; Milestone 1 contains no recruiting records or authentication claims.
+The implemented schema backs every organization-owned relation with an organization key and uses composite foreign keys for tenant-consistent attribution. Partial unique indexes protect active candidates, applications, invitations, and tokens; named checks protect lifecycle timestamps, resumes, interviews, audit summaries, and concurrency versions. Every future protected operation must still resolve the current session and active membership on the server and include the trusted `organizationId` in its query—the database constraints complement, rather than replace, server authorization.
 
 For diagrams, trust boundaries, data relationships, and deployment topology, read [docs/architecture.md](docs/architecture.md). Accepted trade-offs are recorded in [docs/decisions.md](docs/decisions.md), callable boundaries in [docs/api.md](docs/api.md), and original product lessons in [docs/competitive-analysis.md](docs/competitive-analysis.md).
 
@@ -150,14 +160,14 @@ For diagrams, trust boundaries, data relationships, and deployment topology, rea
 
 - [x] Product plan and architecture diagrams
 - [x] Repository foundation, design system, command palette, static docs/FAQ, CI, and base UI verification
-- [ ] PostgreSQL schema, reviewed migrations, and idempotent demo seed
-- [ ] Credentials/optional OAuth, email verification, password reset, invitations, and RBAC
+- [x] PostgreSQL schema, reviewed migrations, tenant constraints, real-database tests, and idempotent demo seed
+- [x] Credentials/optional OAuth, email verification, password reset, invitations, protected layout, and RBAC baseline
 - [ ] Jobs vertical slice with search, keyset cursors, cross-page bulk actions, archive, and CSV/PDF export
 - [ ] Candidates, private resumes, notes, and applications
 - [ ] Accessible optimistic pipeline and interview scheduling
 - [ ] Live analytics, activity history, accessibility review, and performance hardening
 - [ ] Critical-path Playwright and Lighthouse CI gates
-- [ ] Public repository/deployment, demo credentials, screenshots, case study, demo video, and tagged v1.0.0 release
+- [ ] Final demo credentials, product screenshots, completed case study, demo video, and tagged v1.0.0 release
 
 Progress is recorded under the unreleased section of [CHANGELOG.md](CHANGELOG.md); a task is checked here only after its milestone verification passes.
 
@@ -167,7 +177,7 @@ Contributions should be scoped, tested, and described in terms of user impact. R
 
 ## Case study
 
-The portfolio write-up is maintained in [docs/case-study.md](docs/case-study.md). It is intentionally marked pre-release until real screenshots, a working live URL, verification output, and measured results exist.
+The portfolio write-up is maintained in [docs/case-study.md](docs/case-study.md). It is intentionally marked pre-release until complete workflows, demo access, real product screenshots, final verification output, and measured results exist.
 
 ## Credit
 

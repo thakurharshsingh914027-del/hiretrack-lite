@@ -1,12 +1,12 @@
 # HireTrack Lite Architecture
 
-Status: **Approved target architecture; implemented incrementally by milestone**
+Status: **Approved target architecture; data foundation implemented through Milestone 2**
 
-Last updated: 2026-07-13
+Last updated: 2026-07-14
 
 ## Architectural overview
 
-This document is the normative v1 target, not a claim that every boundary already ships. Milestone 1 implements the runnable public foundation, responsive shell, and documentation surfaces; later gated milestones add persistence, authentication, recruiting workflows, exports, and deployment evidence.
+This document is the normative v1 target, not a claim that every boundary already ships. Milestone 1 implements the runnable public foundation; Milestone 2 implements the PostgreSQL/Prisma schema, migration, seed, client boundary, and real-database tests. Later gated milestones connect authentication, recruiting workflows, exports, and final deployment evidence to that data foundation.
 
 The approved release architecture targets a tenant-isolated Next.js application on Vercel. React Server Components will perform authorized reads close to PostgreSQL; focused client components will handle forms, charts, dialogs, commands, cross-cursor selection, and optimistic Kanban interaction. Server Actions will cover ordinary typed and confirmed bulk mutations. Route Handlers will own Auth.js, private file streams, and CSV/PDF downloads. Public documentation and FAQ routes are already statically generated for crawlability and emit visible-content-matched structured data.
 
@@ -92,7 +92,7 @@ erDiagram
         string email
         string emailNormalized UK
         string passwordHash "nullable for OAuth-only users"
-        datetime emailVerifiedAt
+        datetime emailVerified
         int sessionVersion
         datetime disabledAt
         datetime createdAt
@@ -114,6 +114,7 @@ erDiagram
         uuid organizationId FK
         uuid userId FK
         Role role
+        int version
         datetime deactivatedAt
         datetime createdAt
         datetime updatedAt
@@ -130,6 +131,7 @@ erDiagram
         text description
         text requirements
         JobStatus status
+        int version
         datetime deletedAt
         datetime createdAt
         datetime updatedAt
@@ -151,6 +153,7 @@ erDiagram
         string resumeFileName
         string resumeMimeType
         int resumeSizeBytes
+        int version
         datetime deletedAt
         datetime createdAt
         datetime updatedAt
@@ -166,6 +169,7 @@ erDiagram
         string source
         datetime hiredAt
         datetime rejectedAt
+        int version
         datetime deletedAt
         datetime createdAt
         datetime updatedAt
@@ -185,6 +189,7 @@ erDiagram
         InterviewStatus status
         text feedback
         int rating
+        int version
         datetime createdAt
         datetime updatedAt
     }
@@ -208,6 +213,7 @@ erDiagram
         EntityType entityType
         uuid entityId
         AuditAction action
+        uuid batchId
         json changes
         datetime createdAt
         datetime updatedAt
@@ -219,6 +225,7 @@ erDiagram
         string tokenHash UK
         datetime expiresAt
         datetime usedAt
+        datetime invalidatedAt
         datetime createdAt
         datetime updatedAt
     }
@@ -229,6 +236,7 @@ erDiagram
         string tokenHash UK
         datetime expiresAt
         datetime usedAt
+        datetime invalidatedAt
         datetime createdAt
         datetime updatedAt
     }
@@ -239,7 +247,7 @@ erDiagram
         uuid invitedByMembershipId FK
         string email
         string emailNormalized
-        Role role
+        InvitationRole role
         string tokenHash UK
         datetime expiresAt
         datetime acceptedAt
@@ -382,13 +390,16 @@ The main defense-in-depth invariant is that a protected resource is never fetche
 
 ## Database constraints and deletion behavior
 
+- Organization-scoped attribution and domain links use composite foreign keys, so a job, candidate, application, interview, note, activity actor, or invitation cannot reference a membership/entity from another organization.
 - Active candidate uniqueness uses a PostgreSQL partial unique index on `(organizationId, emailNormalized)` where `deletedAt IS NULL`.
-- Active application uniqueness uses a partial unique index on `(jobId, candidateId)` where `deletedAt IS NULL`.
+- Active application uniqueness uses a partial unique index on `(organizationId, jobId, candidateId)` where `deletedAt IS NULL`.
+- Pending invitations and unused verification/reset tokens use partial unique indexes. Expired invitation/token state is handled transactionally rather than with a time-dependent index predicate.
+- Named checks enforce normalized identities, positive versions, application stage timestamps, resume metadata/size/type, interview time/rating, note deletion pairing, token hash/state, and object-shaped audit summaries.
 - Auth provider identities use a unique `(provider, providerAccountId)` constraint and indexed `userId`; account linking is an explicit authenticated flow rather than an email-only upsert.
 - Foreign-key indexes are explicit where PostgreSQL does not create them automatically.
 - Recruiting entities use soft deletion when history/recovery is valuable. Product code does not hard-delete organizations, users, jobs, candidates, applications, memberships, or activity logs.
 - Interview cancellation and note soft deletion preserve auditability.
-- Exceptional operator-controlled tenant purge may cascade organization data; audit actor references may become null where required. That operation is not exposed in v1.
+- Exceptional operator-controlled tenant purge uses the reviewed cascade graph and explicit ordering where retained attribution requires it. That operation is not exposed in v1.
 
 ## Deployment topology
 

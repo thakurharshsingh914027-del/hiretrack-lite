@@ -19,8 +19,37 @@ jobs:
     name: Format, lint, typecheck, test, and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: hiretrack_test
+          POSTGRES_USER: hiretrack
+          POSTGRES_PASSWORD: hiretrack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hiretrack -d hiretrack_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://hiretrack:hiretrack_test@localhost:5432/hiretrack_test
+      DIRECT_URL: postgresql://hiretrack:hiretrack_test@localhost:5432/hiretrack_test
+      TEST_DATABASE_URL: postgresql://hiretrack:hiretrack_test@localhost:5432/hiretrack_test
+      ALLOW_DATABASE_RESET: "true"
+      DEMO_ORGANIZATION_NAME: HireTrack CI Demo
+      DEMO_ADMIN_NAME: Demo Admin
+      DEMO_ADMIN_EMAIL: demo-ci@example.com
+      DEMO_ADMIN_PASSWORD: correct-horse-battery-staple
+      AUTH_SECRET: ci-auth-secret-value-with-at-least-32-bytes-entropy
+      AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      RESEND_API_KEY: ci-resend-key
+      EMAIL_FROM: noreply@example.com
+      UPSTASH_REDIS_REST_URL: https://ci.example.invalid
+      UPSTASH_REDIS_REST_TOKEN: ci-upstash-token
 
     steps:
       - name: Check out repository
@@ -35,6 +64,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate database schema
+        run: npm run db:validate
+
+      - name: Apply database migrations
+        run: npm run db:migrate:deploy
+
+      - name: Verify demo seed command
+        run: npm run db:seed
 
       - name: Check formatting
         run: npm run format:check

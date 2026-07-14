@@ -21,31 +21,12 @@ test("landing page exposes the product and static documentation", async ({
   ).toBeVisible();
 });
 
-test("workspace command palette is keyboard accessible", async ({ page }) => {
+test("anonymous workspace access redirects to sign in", async ({ page }) => {
   await page.goto("/app");
-
-  const trigger = page.getByRole("button", { name: /Search or jump to/ });
-  await trigger.click();
-  await expect(
-    page.getByRole("dialog", { name: "Command palette" }),
-  ).toBeVisible();
-  await page.keyboard.press("Escape");
-
-  await page.keyboard.press("ControlOrMeta+K");
-
-  await expect(
-    page.getByRole("dialog", { name: "Command palette" }),
-  ).toBeVisible();
-  await expect(
-    page.getByPlaceholder("Search pages and actions…"),
-  ).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("dialog", { name: "Command palette" }),
-  ).toBeHidden();
+  await expect(page).toHaveURL(/\/login\?callbackUrl=\/app$/);
 });
 
-const narrowViewportRoutes = ["/", "/docs/features", "/faq", "/app"];
+const narrowViewportRoutes = ["/", "/docs/features", "/faq", "/app"] as const;
 
 for (const route of narrowViewportRoutes) {
   test(`${route} does not cause horizontal page overflow at 320 pixels`, async ({
@@ -84,21 +65,12 @@ test("marketing mobile navigation closes after following its links", async ({
   }
 });
 
-test("workspace mobile navigation closes after navigating to Jobs", async ({
+test("anonymous deep workspace routes remain protected on mobile", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("/app");
-  await page.getByRole("button", { name: "Open workspace navigation" }).click();
-
-  const navigation = page.getByRole("dialog", {
-    name: "Workspace navigation",
-  });
-  await expect(navigation).toBeVisible();
-  await navigation.getByRole("link", { name: "Jobs" }).click();
-
-  await expect(page).toHaveURL("/app/jobs");
-  await expect(navigation).toBeHidden();
+  await expect(page).toHaveURL(/\/login\?callbackUrl=\/app$/);
 });
 
 test("theme starts from the system preference and can be overridden", async ({

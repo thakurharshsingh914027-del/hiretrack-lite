@@ -12,7 +12,7 @@ export default function FeaturesPage() {
   return (
     <DocsPage
       title="Product features"
-      description="The approved v1 workflow, presented as a release plan rather than functionality already shipped in the Milestone 1 foundation."
+      description="The approved v1 workflow, presented as a release plan rather than functionality already shipped by the foundation and data-model milestones."
       path="/docs/features"
     >
       <h2>Planned core workflow</h2>

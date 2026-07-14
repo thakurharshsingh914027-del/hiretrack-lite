@@ -2,7 +2,7 @@
 
 Status: **Pre-release working draft**
 
-No public repository URL, live URL, demo credentials, product screenshots, user results, Lighthouse scores, or production metrics are available yet. This document provides the case-study structure and records decisions that already exist; its result section will be completed only from verifiable release evidence.
+A public repository and pre-release HTTPS preview are available. Demo credentials, completed recruiting workflows, final product screenshots, a semantic release tag, user results, Lighthouse scores, and production metrics are not available yet. This document records evidence that exists while keeping unfinished release claims visibly pending.
 
 ## One-paragraph pitch
 
@@ -52,7 +52,7 @@ Implementation is split into gated milestones: foundation, data model, authentic
 
 Release results are **not yet available**. The following evidence must exist before this section is rewritten in the past tense:
 
-- A public GitHub repository, pushed semantic release tag, and public HTTPS deployment that pass link and incognito smoke checks.
+- A pushed semantic release tag plus final repository and HTTPS preview link/incognito smoke checks.
 - A verified demo account documented in the README after the auth and seed milestones.
 - Three to five screenshots captured from real application states.
 - A 60–90 second recording of login, job creation, candidate creation, application creation, and a persisted pipeline move.
@@ -70,25 +70,25 @@ This section will grow with specific implementation lessons and incidents as mil
 
 ## What comes next
 
-1. Use the verified repository foundation, responsive shell, command palette, static docs/FAQ, sourced competitive analysis, environment validation, tests, and CI as the base for later milestones.
-2. Commit and test the PostgreSQL schema, constraints, migrations, factories, and idempotent demo seed.
-3. Implement credentials/optional OAuth, email verification, recovery, invitations, and the complete authorization matrix.
-4. Deliver the job, candidate, application, pipeline, interview, and analytics vertical slices, including cursor traversal, bulk actions, and both export formats.
-5. Complete security, accessibility, performance, critical-path end-to-end, and Lighthouse review.
-6. Publish the repository and deployment with user-authorized access, capture real evidence, publish demo access, record the walkthrough, and push v1.0.0.
+1. Use the verified repository and PostgreSQL foundations—reviewed migration, composite tenant constraints, factories, idempotent Argon2id seed, and real-database CI—as the base for protected features.
+2. Implement credentials/optional OAuth, email verification, recovery, invitations, and the complete authorization matrix.
+3. Deliver the job, candidate, application, pipeline, interview, and analytics vertical slices, including cursor traversal, bulk actions, and both export formats.
+4. Complete security, accessibility, performance, critical-path end-to-end, and Lighthouse review.
+5. Verify the existing public repository and preview against the completed product, capture real evidence, publish demo access, record the walkthrough, and push v1.0.0.
 
 ## Release evidence
 
-| Evidence                            | Status    | Location                                                 |
-| ----------------------------------- | --------- | -------------------------------------------------------- |
-| Public repository                   | Pending   | Public URL plus pushed semantic release tag              |
-| Live application                    | Pending   | URL will replace the README placeholder after deployment |
-| Demo credentials                    | Pending   | README after authentication and seed verification        |
-| Product screenshots                 | Pending   | `docs/screenshots/`                                      |
-| Competitive analysis                | Available | `docs/competitive-analysis.md`                           |
-| Demo video                          | Pending   | Public link after final workflow recording               |
-| CI verification                     | Pending   | GitHub Actions workflow runs                             |
-| Accessibility and Lighthouse report | Pending   | Release notes or linked verification artifact            |
+| Evidence                            | Status    | Location                                                     |
+| ----------------------------------- | --------- | ------------------------------------------------------------ |
+| Public repository                   | Available | https://github.com/thakurharshsingh914027-del/hiretrack-lite |
+| Live pre-release application        | Available | https://hiretrack-lite.vercel.app                            |
+| Demo credentials                    | Pending   | README after authentication and seed verification            |
+| Product screenshots                 | Pending   | `docs/screenshots/`                                          |
+| Competitive analysis                | Available | `docs/competitive-analysis.md`                               |
+| Demo video                          | Pending   | Public link after final workflow recording                   |
+| Foundation CI                       | Available | GitHub Actions workflow runs                                 |
+| Final release CI and Lighthouse     | Pending   | Tagged release workflow and measured report                  |
+| Accessibility and Lighthouse report | Pending   | Release notes or linked verification artifact                |
 
 ## Credit
 

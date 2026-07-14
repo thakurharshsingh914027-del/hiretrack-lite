@@ -2,7 +2,7 @@
 
 Status: Accepted for the v1 implementation plan; each decision is verified in the milestone that introduces it.
 
-Last updated: 2026-07-13
+Last updated: 2026-07-14
 
 This log records decisions that are easy to lose in code review but materially affect security, data integrity, operations, or product behavior. The system context and diagrams are in [architecture.md](architecture.md); the release contract is in [../plan.md](../plan.md).
 
@@ -22,6 +22,7 @@ Milestone 1 uses a static baseline CSP that limits production connections to the
 | ADR-008 | Provider-neutral adapters around managed infrastructure              | Accepted |
 | ADR-009 | All-matching bulk selection is rebuilt and authorized on the server  | Accepted |
 | ADR-010 | Static structured docs and Lighthouse-gated public delivery evidence | Accepted |
+| ADR-011 | Prisma 7 data foundation with tenant-consistent foreign keys         | Accepted |
 
 ## ADR-001: Auth.js encrypted JWT sessions with live database checks
 
@@ -67,7 +68,7 @@ Recruiting history, attribution, and audit records must survive an accidental ar
 
 ### Decision
 
-Jobs, candidates, applications, memberships, and notes use lifecycle fields such as `deletedAt` or `deactivatedAt` instead of ordinary product hard deletion. PostgreSQL partial unique indexes enforce active-only invariants, including candidate email uniqueness within an organization and one active application for a candidate/job pair. Product reads exclude archived rows by default, while explicit restore paths detect conflicts.
+Jobs, candidates, applications, memberships, and notes use lifecycle fields such as `deletedAt` or `deactivatedAt` instead of ordinary product hard deletion. PostgreSQL partial unique indexes enforce active-only invariants, including candidate email uniqueness within an organization, one active application for a candidate/job pair, one pending invitation per organization/email, and one active verification/reset token per user. Product reads exclude archived rows by default, while explicit restore paths detect conflicts. Token issuance invalidates the previous unused token transactionally because expiration cannot safely be encoded with `now()` in a partial-index predicate.
 
 ### Consequences
 
@@ -197,6 +198,26 @@ Final acceptance additionally requires a user-authorized public repository and d
 - Structured data is derived from visible content to prevent drift and misleading search output.
 - Lighthouse is a measured release gate rather than an unverified README badge or claim.
 - Public evidence artifacts are versioned or linked from the repository and must be smoke-tested before release.
+
+## ADR-011: Prisma 7 data foundation with tenant-consistent foreign keys
+
+### Context
+
+An `organizationId` column is useful for query scoping but does not, by itself, prevent an application from referencing a job, candidate, or member belonging to another tenant. The first migration also needs to remain compatible with the future Auth.js Prisma adapter and with pooled serverless PostgreSQL connections without making static builds depend on a live database.
+
+### Decision
+
+Milestone 2 pins Prisma ORM 7.8 and `@prisma/adapter-pg`. Prisma commands load `.env.local` and then `.env` without overriding shell values; the CLI reads the direct migration connection from `DIRECT_URL`, while the lazy runtime client validates only pooled `DATABASE_URL` when a data path requests it. Migration and seed-only values are parsed by separate contracts and are not required by application runtime code. When neither database variable exists, the config uses an intentionally unreachable generate-only URL so dependency installation can generate the client without risking an accidental local migration. Generated client code is recreated during installation and is not committed.
+
+Organization-owned attribution and domain relations use composite foreign keys such as `(organizationId, membershipId)` and `(organizationId, jobId)`, backed by composite unique targets. Activity attribution uses PostgreSQL's column-specific `ON DELETE SET NULL (actor_membership_id)` action so an exceptional membership purge preserves the tenant and audit event. The Prisma schema records the `SetNull` semantic but cannot express the narrowed column list, so validation emits the documented required-field warning and the reviewed SQL migration is authoritative. Named PostgreSQL checks enforce versions, normalized identities, lifecycle timestamps, interview ranges/ratings, resume metadata coherence and size, token hashes, note deletion state, and object-shaped audit summaries. Prisma model `Account` and `User.emailVerified` retain standard Auth.js adapter-facing names while physical tables and columns use explicit mappings. JWT sessions intentionally do not add a database session table.
+
+### Consequences
+
+- Cross-tenant inserts fail at PostgreSQL even if an application bug omits a relationship check; protected reads must still include the trusted organization predicate.
+- Schema checks and partial indexes live in reviewed migration SQL and require real-PostgreSQL integration tests because mocks and SQLite cannot prove them.
+- `version` fields provide atomic optimistic-concurrency tokens independently of client-managed `updatedAt` timestamps.
+- The idempotent seed hashes its configured admin password with the approved Argon2id policy, upgrades legacy/weak hashes, and never logs it. Only disposable plaintext values exist in tests/CI; recruiter/viewer fixtures are verified but passwordless until an explicit authentication flow owns them.
+- Ordinary product deletion remains archival/deactivation. Cascading organization/user foreign keys exist only for an exceptional operator-controlled purge and are never exposed as a v1 mutation.
 
 ## Changing a decision
 

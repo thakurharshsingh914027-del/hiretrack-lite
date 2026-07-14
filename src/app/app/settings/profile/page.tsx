@@ -1,7 +1,7 @@
-import { SettingsIcon } from "lucide-react";
-
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
 import { createMetadata } from "@/lib/site";
+import { auth } from "../../../../../auth";
+import { getDatabase } from "@/lib/db";
+import { resolveAccessContext } from "@/lib/auth/session";
 
 export const metadata = createMetadata({
   title: "Profile settings",
@@ -10,16 +10,43 @@ export const metadata = createMetadata({
   noIndex: true,
 });
 
-export default function ProfileSettingsPage() {
+export default async function ProfileSettingsPage() {
+  const session = await auth();
+  const context = session?.user.id
+    ? await resolveAccessContext(getDatabase(), {
+        userId: session.user.id,
+        sessionVersion: session.sessionVersion,
+        ...(session.selectedOrganizationId
+          ? { selectedOrganizationId: session.selectedOrganizationId }
+          : {}),
+      })
+    : null;
+  if (!context) return null;
   return (
-    <PlaceholderPage
-      eyebrow="Settings"
-      title="Profile settings"
-      description="Your profile and workspace preferences will be managed from this view."
-      emptyTitle="Profile settings are not connected yet"
-      emptyDescription="Secure profile editing arrives with the authentication milestone."
-      icon={<SettingsIcon className="size-5" aria-hidden="true" />}
-      docsHref="/docs/getting-started"
-    />
+    <main id="main-content">
+      <p className="text-primary text-sm font-semibold">Settings</p>
+      <h1 className="mt-1 text-3xl font-semibold">Profile settings</h1>
+      <p className="text-muted-foreground mt-2 text-sm">
+        Your identity and current workspace context.
+      </p>
+      <div className="border-border bg-card mt-8 grid gap-4 rounded-xl border p-6">
+        <div>
+          <p className="text-muted-foreground text-xs uppercase">Name</p>
+          <p className="mt-1 font-medium">{context.user.name || "—"}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground text-xs uppercase">Email</p>
+          <p className="mt-1 font-medium">{context.user.email}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground text-xs uppercase">Workspace</p>
+          <p className="mt-1 font-medium">{context.organization.name}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground text-xs uppercase">Role</p>
+          <p className="mt-1 font-medium">{context.membership.role}</p>
+        </div>
+      </div>
+    </main>
   );
 }

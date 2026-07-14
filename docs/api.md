@@ -1,6 +1,6 @@
 # HireTrack Lite API and Server Action Contracts
 
-Status: foundation contract; exact Zod schemas, examples, and error codes are added with each feature milestone.
+Status: Milestones 1–3 contract; recruiting-domain schemas are added with their later vertical slices.
 
 HireTrack Lite uses Server Actions for ordinary form/domain mutations and Route Handlers for authentication, private file streams, and streamed exports. Public framework routes are documented here because all browser-callable boundaries require explicit input, output, authorization, and rate-limit behavior.
 
@@ -13,6 +13,8 @@ HireTrack Lite uses Server Actions for ordinary form/domain mutations and Route 
 - Action results use `{ ok: true, data }` or `{ ok: false, code, message, fieldErrors? }`.
 - Route errors use an appropriate status, a stable safe code/message, and `Retry-After` on rate-limit responses.
 - Missing and cross-organization records use the same outward result where revealing existence would be unsafe.
+- Verification, reset, and invitation links use a browser fragment (`#token=…`); the raw value is sent once in a Server Action and is never placed in a server-visible query string. Only SHA-256 token hashes are persisted.
+- Auth failures are generic. Rate-limited action results include `retryAfter` seconds; HTTP rate-limit responses include `Retry-After`.
 
 ## Route Handlers
 
